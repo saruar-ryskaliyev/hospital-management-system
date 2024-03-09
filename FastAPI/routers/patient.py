@@ -15,7 +15,23 @@ def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)
     db.refresh(db_patient)
     return db_patient
 
+
 @router.get("/patients/", response_model=List[schemas.Patient], tags=["patient"])
 def read_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     patients = db.query(models.Patient).offset(skip).limit(limit).all()
     return patients
+
+
+@router.delete("/patients/{patient_id}", tags=["patient"])
+def delete_patient(patient_id: int, db: Session = Depends(get_db)):
+    db_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+    if db_patient is None:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+
+    db.query(models.Appointment).filter(models.Appointment.patient_id == patient_id).delete()
+
+
+    db.delete(db_patient)
+    db.commit()
+    return {"message": "Patient deleted"}

@@ -9,7 +9,7 @@ class Doctor(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     specialization = Column(String)
-    hospital_id = Column(Integer, ForeignKey("hospitals.id"))
+    hospital_id = Column(Integer, ForeignKey("hospitals.id"), nullable=True)
 
     hospital = relationship("Hospital", back_populates="doctors")
     appointments = relationship("Appointment", back_populates="doctor")

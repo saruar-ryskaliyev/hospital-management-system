@@ -18,3 +18,12 @@ def create_hospital(hospital: schemas.HospitalCreate, db: Session = Depends(get_
 def read_hospitals(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     hospitals = db.query(models.Hospital).options(joinedload(models.Hospital.doctors)).offset(skip).limit(limit).all()
     return hospitals
+
+@router.delete("/hospitals/{hospital_id}", tags=["hospitals"])
+def delete_hospital(hospital_id: int, db: Session = Depends(get_db)):
+    db_hospital = db.query(models.Hospital).filter(models.Hospital.id == hospital_id).first()
+    if db_hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+    db.delete(db_hospital)
+    db.commit()
+    return {"message": "Hospital deleted"}

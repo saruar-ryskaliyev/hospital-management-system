@@ -15,5 +15,6 @@ class PatientCreate(PatientBase):
 class Patient(PatientBase):
     id: int
 
+
     class Config:
         orm_mode = True

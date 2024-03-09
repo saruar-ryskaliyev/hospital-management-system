@@ -12,5 +12,6 @@ class Patient(Base):
     medical_history = Column(String)
 
 
+
     appointments = relationship("Appointment", back_populates="patient")
 
