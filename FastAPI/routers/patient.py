@@ -7,7 +7,7 @@ from ..database import get_db
 
 router = APIRouter()
 
-@router.post("/patients/", response_model=schemas.Hospital, tags=["patient"])
+@router.post("/patients/", response_model=schemas.Patient, tags=["patient"])
 def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
     db_patient = models.Patient(**patient.dict())
     db.add(db_patient)

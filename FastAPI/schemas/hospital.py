@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from .doctor import Doctor
+from typing import List
 
 class HospitalBase(BaseModel):
     name: str
@@ -10,6 +12,7 @@ class HospitalCreate(HospitalBase):
 
 class Hospital(HospitalBase):
     id: int
+    doctors: List[Doctor] = []
 
     class Config:
         orm_mode = True

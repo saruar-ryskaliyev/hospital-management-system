@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from .doctor import Doctor
+from .patient import Patient
 
 class AppointmentBase(BaseModel):
-    doctor_id: int
-    patient_id: int
     date_time: datetime
     notes: Optional[str]
 
@@ -13,6 +13,8 @@ class AppointmentCreate(AppointmentBase):
 
 class Appointment(AppointmentBase):
     id: int
+    doctor: Doctor
+    patient: Patient
 
     class Config:
         orm_mode = True

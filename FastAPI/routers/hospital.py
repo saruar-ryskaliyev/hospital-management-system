@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session  
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from .. import models, schemas
 from ..database import get_db
@@ -16,5 +16,5 @@ def create_hospital(hospital: schemas.HospitalCreate, db: Session = Depends(get_
 
 @router.get("/hospitals/", response_model=List[schemas.Hospital], tags=["hospitals"])
 def read_hospitals(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    hospitals = db.query(models.Hospital).offset(skip).limit(limit).all()
+    hospitals = db.query(models.Hospital).options(joinedload(models.Hospital.doctors)).offset(skip).limit(limit).all()
     return hospitals

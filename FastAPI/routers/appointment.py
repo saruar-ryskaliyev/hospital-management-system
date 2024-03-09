@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session  
+from sqlalchemy.orm import Session, joinedload  
 from typing import List
 from .. import models, schemas
 from ..database import get_db
@@ -14,7 +14,9 @@ def create_appointment(appointment: schemas.AppointmentCreate, db: Session = Dep
     db.refresh(db_appointment)
     return db_appointment
 
+
+
 @router.get("/appointments/", response_model=List[schemas.Appointment], tags=["appointments"])
 def read_appointments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    appointments = db.query(models.Appointment).offset(skip).limit(limit).all()
+    appointments = db.query(models.Appointment).options(joinedload(models.Appointment.doctor), joinedload(models.Appointment.patient)).offset(skip).limit(limit).all()
     return appointments
