@@ -1,0 +1,194 @@
+Hospital Methods
+
+    DONE Update Hospital Details:
+    PUT /hospitals/{hospital_id} - Update the details of a hospital.
+
+    DONE Get Hospital by ID:
+    GET /hospitals/{hospital_id} - Retrieve the details of a specific hospital.
+
+Doctor Methods
+
+    DONE Update Doctor Details:
+    PUT /doctors/{doctor_id} - Update the details of a doctor.
+
+    DONE Get Doctor by ID:
+    GET /doctors/{doctor_id} - Retrieve the details of a specific doctor.
+
+Patient Methods
+
+    DONE Update Patient Details:
+    PUT /patients/{patient_id} - Update the details of a patient.
+
+    DONE Get Patient by ID:
+    GET /patients/{patient_id} - Retrieve the details of a specific patient.
+
+Appointment Methods
+
+    DONE Update Appointment Details:
+    PUT /appointments/{appointment_id} - Update the details of an appointment.
+
+    DONE Get Appointment by ID:
+    GET /appointments/{appointment_id} - Retrieve the details of a specific appointment.
+
+Additional Methods for Comprehensive Management
+
+    Get Doctors by Hospital ID:
+    GET /hospitals/{hospital_id}/doctors - Retrieve all doctors associated with a specific hospital.
+
+    Get Patients by Doctor ID:
+    GET /doctors/{doctor_id}/patients - Retrieve all patients associated with a specific doctor.
+
+    Get Appointments by Patient ID:
+    GET /patients/{patient_id}/appointments - Retrieve all appointments for a specific patient.
+
+    Get Appointments by Doctor ID:
+    GET /doctors/{doctor_id}/appointments - Retrieve all appointments for a specific doctor.
+
+    Get Appointments by Hospital ID:
+    GET /hospitals/{hospital_id}/appointments - Retrieve all appointments within a specific hospital.
+
+Administrative Methods
+
+    List All Hospitals:
+    GET /hospitals - Retrieve a list of all hospitals.
+
+    List All Doctors:
+    GET /doctors - Retrieve a list of all doctors.
+
+    List All Patients:
+    GET /patients - Retrieve a list of all patients.
+
+    List All Appointments:
+    GET /appointments - Retrieve a list of all appointments.
+
+Authentication and Authorization Methods
+
+    User Registration:
+    POST /users/register - Register a new user.
+
+    User Login:
+    POST /users/login - Authenticate a user and return a token.
+
+    User Permissions Update:
+    PUT /users/{user_id}/permissions - Update the permissions of a user (for admin roles).
+
+Reporting and Statistics Methods
+
+    Get Hospital Statistics:
+    GET /hospitals/{hospital_id}/statistics - Get statistics for a hospital, like the number of patients served, appointments, etc.
+
+    Get Doctor Performance Metrics:
+    GET /doctors/{doctor_id}/metrics - Get performance metrics for a doctor, like the number of appointments, patient satisfaction scores, etc.
+
+    Generate Report for Hospital:
+    GET /hospitals/{hospital_id}/report - Generate a report with details like financials, services provided, etc.
+
+
+
+
+
+
+
+
+
+
+
+    Managing a doctor's timetable with free appointment times involves several steps to ensure that the schedule is correctly handled and integrated into the hospital management system. Here's a general approach:
+1. Define the Timetable Model
+
+First, define a model for the timetable. This should include fields such as the doctor ID, the day of the week, and time slots.
+2. Create a Timetable Schema
+
+Create a Pydantic schema that corresponds to the timetable model. This will be used for validation when timetable data is sent via API requests.
+3. Add Timetable to the Database Model
+
+Add a timetable table to your database, linking each entry to a specific doctor via a foreign key.
+4. Develop Timetable Management Endpoints
+
+Create endpoints in your API to manage the timetables:
+
+    Create Timetable:
+    POST /doctors/{doctor_id}/timetable - Create a timetable for a doctor.
+
+    Update Timetable:
+    PUT /doctors/{doctor_id}/timetable - Update a doctor's timetable.
+
+    Get Timetable:
+    GET /doctors/{doctor_id}/timetable - Retrieve a doctor's timetable.
+
+    Delete Timetable Slot:
+    DELETE /doctors/{doctor_id}/timetable/{slot_id} - Delete a specific slot from a doctor's timetable.
+
+5. Check for Free Appointment Times
+
+When creating an appointment, you'll need logic that checks against the doctor's timetable for free slots. You can create an endpoint like:
+
+    Get Available Appointment Slots:
+    GET /doctors/{doctor_id}/available-slots - Get available time slots for a doctor's appointments.
+
+6. Link Appointments with Timetable
+
+When an appointment is booked, it should mark the corresponding time slot in the doctor's timetable as occupied.
+7. Update Timetable upon Appointment Cancellation or Rescheduling
+
+Ensure that when an appointment is canceled or rescheduled, the timetable is updated accordingly to reflect the new availability.
+Sample Implementation
+
+Here's a high-level overview of how the models, schemas, and API endpoints might look:
+Models (SQLAlchemy)
+
+python
+
+class Timetable(Base):
+    __tablename__ = 'timetables'
+    id = Column(Integer, primary_key=True, index=True)
+    doctor_id = Column(Integer, ForeignKey('doctors.id'))
+    day_of_week = Column(Integer)  # 0 = Monday, 6 = Sunday
+    start_time = Column(Time)
+    end_time = Column(Time)
+    # Consider adding a field for status (e.g., 'free', 'booked')
+
+    doctor = relationship("Doctor", back_populates="timetable")
+
+Schemas (Pydantic)
+
+python
+
+class TimetableSlotBase(BaseModel):
+    day_of_week: int
+    start_time: time
+    end_time: time
+
+class TimetableSlotCreate(TimetableSlotBase):
+    pass
+
+class TimetableSlot(TimetableSlotBase):
+    id: int
+    doctor_id: int
+
+    class Config:
+        orm_mode = True
+
+API Endpoints (FastAPI)
+
+python
+
+@router.post("/doctors/{doctor_id}/timetable", response_model=List[schemas.TimetableSlot])
+def create_timetable_for_doctor(doctor_id: int, timetable_data: List[schemas.TimetableSlotCreate], db: Session = Depends(get_db)):
+    # Logic to create timetable slots for a doctor
+    pass
+
+@router.get("/doctors/{doctor_id}/available-slots", response_model=List[schemas.TimetableSlot])
+def get_available_slots_for_doctor(doctor_id: int, db: Session = Depends(get_db)):
+    # Logic to retrieve available slots
+    pass
+
+In the logic for the get_available_slots_for_doctor endpoint, you'd calculate the free slots by cross-referencing the doctor's appointments with their timetable.
+Considerations
+
+    Concurrency: Be aware of potential race conditions where two patients might book the same slot concurrently. You may need to implement locking mechanisms to prevent this.
+    Time Zones: If your application is used across multiple time zones, ensure that time slots are managed and presented in the correct time zone for both the doctor and the patient.
+    Recurring Slots: If doctors have a recurring schedule, your model should account for repeating time slots across weeks.
+    Buffer Times: Consider including buffer times between appointments for preparation or unforeseen delays.
+
+Implementing a robust system for managing doctors' timetables requires careful planning and attention to how the data will be used and interacted with throughout your application.
