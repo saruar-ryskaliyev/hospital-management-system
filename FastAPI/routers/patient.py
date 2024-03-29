@@ -3,12 +3,17 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import models, schemas
 from ..database import get_db
+from ..auth import get_current_active_user
+from ..models import User
 
 
 router = APIRouter()
 
 @router.post("/patients/create/", response_model=schemas.Patient, tags=["patient"])
-def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
+def create_patient(
+        patient: schemas.PatientCreate, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin", "staff"]))):
     db_patient = models.Patient(**patient.dict())
     db.add(db_patient)
     db.commit()
@@ -17,13 +22,20 @@ def create_patient(patient: schemas.PatientCreate, db: Session = Depends(get_db)
 
 
 @router.get("/patients/", response_model=List[schemas.Patient], tags=["patient"])
-def read_patients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_patients(
+        skip: int = 0, 
+        limit: int = 100, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin", "staff", "doctor"]))):
     patients = db.query(models.Patient).offset(skip).limit(limit).all()
     return patients
 
 
 @router.get("/patients/by_id/{patient_id}", response_model=schemas.Patient, tags=["patient"])
-def read_patient(patient_id: int, db: Session = Depends(get_db)):
+def read_patient(
+        patient_id: int, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin", "staff", "doctor", "patient"]))):
     db_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -31,7 +43,11 @@ def read_patient(patient_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/patients/update/{patient_id}", response_model=schemas.Patient, tags=["patient"])
-def update_patient(patient_id: int, patient: schemas.PatientCreate, db: Session = Depends(get_db)):
+def update_patient(
+        patient_id: int, 
+        patient: schemas.PatientCreate, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin", "staff", "patient"]))):
     db_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -44,7 +60,10 @@ def update_patient(patient_id: int, patient: schemas.PatientCreate, db: Session 
 
 
 @router.delete("/patients/delete/{patient_id}", tags=["patient"])
-def delete_patient(patient_id: int, db: Session = Depends(get_db)):
+def delete_patient(
+        patient_id: int, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
     if db_patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")

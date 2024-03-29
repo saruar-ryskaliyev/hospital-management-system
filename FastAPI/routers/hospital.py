@@ -3,12 +3,18 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List
 from .. import models, schemas
 from ..database import get_db
+from ..auth import get_current_active_user
+from ..models import User
+
 
 router = APIRouter()
 
 
 @router.post("/hospitals/create/", response_model=schemas.Hospital, tags=["hospitals"])
-def create_hospital(hospital: schemas.HospitalCreate, db: Session = Depends(get_db)):
+def create_hospital(
+        hospital: schemas.HospitalCreate, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_hospital = models.Hospital(**hospital.dict())
     db.add(db_hospital)
     db.commit()
@@ -17,7 +23,11 @@ def create_hospital(hospital: schemas.HospitalCreate, db: Session = Depends(get_
 
 
 @router.get("/hospitals/", response_model=List[schemas.Hospital], tags=["hospitals"])
-def read_hospitals(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_hospitals(
+        skip: int = 0, 
+        limit: int = 100, 
+        db: Session = Depends(get_db)):
+    
     hospitals = db.query(models.Hospital).options(joinedload(
         models.Hospital.doctors)).offset(skip).limit(limit).all()
     return hospitals
@@ -33,7 +43,10 @@ def read_hospital(hospital_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/hospitals/delete/{hospital_id}", tags=["hospitals"])
-def delete_hospital(hospital_id: int, db: Session = Depends(get_db)):
+def delete_hospital(
+        hospital_id: int, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_hospital = db.query(models.Hospital).filter(
         models.Hospital.id == hospital_id).first()
     if db_hospital is None:
@@ -44,7 +57,11 @@ def delete_hospital(hospital_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/hospitals/update/{hospital_id}", response_model=schemas.Hospital, tags=["hospitals"])
-def update_hospital(hospital_id: int, hospital: schemas.HospitalCreate, db: Session = Depends(get_db)):
+def update_hospital(
+        hospital_id: int, 
+        hospital: schemas.HospitalCreate, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_hospital = db.query(models.Hospital).filter(
         models.Hospital.id == hospital_id).first()
     if db_hospital is None:

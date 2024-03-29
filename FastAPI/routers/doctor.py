@@ -3,12 +3,17 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import models, schemas
 from ..database import get_db
+from ..auth import get_current_active_user
+from ..models import User
 
 router = APIRouter()
 
 
 @router.post("/doctors/create/", response_model=schemas.Doctor, tags=["doctors"])
-def create_doctor(doctor: schemas.DoctorCreate, db: Session = Depends(get_db)):
+def create_doctor(
+        doctor: schemas.DoctorCreate, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_doctor = models.Doctor(**doctor.dict())
     db.add(db_doctor)
     db.commit()
@@ -17,13 +22,19 @@ def create_doctor(doctor: schemas.DoctorCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/doctors/", response_model=List[schemas.Doctor], tags=["doctors"])
-def read_doctors(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_doctors(
+        skip: int = 0, 
+        limit: int = 100, 
+        db: Session = Depends(get_db)):
     doctors = db.query(models.Doctor).offset(skip).limit(limit).all()
     return doctors
 
 
 @router.get("/doctors/by_id/{doctor_id}", response_model=schemas.Doctor, tags=["doctors"])
-def read_doctor(doctor_id: int, db: Session = Depends(get_db)):
+def read_doctor(
+        doctor_id: int, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin", "staff", "doctor", "patient"]))):
     db_doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
     if db_doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
@@ -31,7 +42,11 @@ def read_doctor(doctor_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/doctors/{doctor_id}/reassign/{hospital_id}", tags=["doctors"])
-def reassign_doctor(doctor_id: int, hospital_id: int, db: Session = Depends(get_db)):
+def reassign_doctor(
+        doctor_id: int, 
+        hospital_id: int, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
     if db_doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
@@ -41,7 +56,11 @@ def reassign_doctor(doctor_id: int, hospital_id: int, db: Session = Depends(get_
 
 
 @router.put("/doctors/update/{doctor_id}", response_model=schemas.Doctor, tags=["doctors"])
-def update_doctor(doctor_id: int, doctor: schemas.DoctorCreate, db: Session = Depends(get_db)):
+def update_doctor(
+        doctor_id: int, 
+        doctor: schemas.DoctorCreate, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin", "doctor"]))):
     db_doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
     if db_doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
@@ -53,7 +72,10 @@ def update_doctor(doctor_id: int, doctor: schemas.DoctorCreate, db: Session = De
 
 
 @router.delete("/doctors/delete/{doctor_id}", tags=["doctors"])
-def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
+def delete_doctor(
+        doctor_id: int, 
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["admin"]))):
     db_doctor = db.query(models.Doctor).filter(models.Doctor.id == doctor_id).first()
     if db_doctor is None:
         raise HTTPException(status_code=404, detail="Doctor not found")
