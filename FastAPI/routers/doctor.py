@@ -86,3 +86,7 @@ def delete_doctor(
     db.delete(db_doctor)
     db.commit()
     return {"message": "Doctor deleted"}
+
+
+
+    

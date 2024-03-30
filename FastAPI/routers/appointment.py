@@ -80,3 +80,39 @@ def delete_appointment(
     db.delete(db_appointment)
     db.commit()
     return {"message": "Appointment deleted"}
+
+
+
+@router.get("/patients/{patient_id}/appointments", response_model=List[schemas.Appointment], tags=["appointments"])
+def get_appointments_by_patient_id(
+        patient_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["patient", "doctor", "admin", 'staff']))):
+    if current_user.role == "patient" and current_user.id != patient_id:
+        raise HTTPException(status_code=403, detail="Not enough permissions to view other patients' appointments")
+    appointments = db.query(models.Appointment).filter(
+        models.Appointment.patient_id == patient_id).all()
+    return appointments
+
+
+@router.get("/doctors/{doctor_id}/appointments", response_model=List[schemas.Appointment], tags=["appointments"])
+def get_appointments_by_doctor_id(
+        doctor_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["doctor", "admin", 'staff']))):
+    if current_user.role == "doctor" and current_user.id != doctor_id:
+        raise HTTPException(status_code=403, detail="Not enough permissions to view other doctors' appointments")
+    appointments = db.query(models.Appointment).filter(
+        models.Appointment.doctor_id == doctor_id).all()
+    return appointments
+
+
+@router.get("/hospitals/{hospital_id}/appointments", response_model=List[schemas.Appointment], tags=["appointments"])
+def get_appointments_by_hospital_id(
+        hospital_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user(["doctor", "admin", 'staff']))):
+    appointments = db.query(models.Appointment).join(models.Doctor).filter(
+        models.Doctor.hospital_id == hospital_id).all()
+    return appointments
+

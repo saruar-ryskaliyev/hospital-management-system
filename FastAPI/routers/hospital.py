@@ -74,4 +74,9 @@ def update_hospital(
     return db_hospital
 
 
-
+@router.get("/hospitals/{hospital_id}/doctors", response_model=List[schemas.Doctor], tags=["hospitals"])
+def read_doctors_by_hospital(
+        hospital_id: int, 
+        db: Session = Depends(get_db)):
+    doctors = db.query(models.Doctor).filter(hospital_id == models.Doctor.hospital_id).all()
+    return doctors

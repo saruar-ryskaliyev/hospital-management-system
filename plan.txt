@@ -34,9 +34,15 @@ Additional Methods for Comprehensive Management
 
     Get Doctors by Hospital ID:
     GET /hospitals/{hospital_id}/doctors - Retrieve all doctors associated with a specific hospital.
+    DONE
+
+
 
     Get Patients by Doctor ID:
     GET /doctors/{doctor_id}/patients - Retrieve all patients associated with a specific doctor.
+
+    
+
 
     Get Appointments by Patient ID:
     GET /patients/{patient_id}/appointments - Retrieve all appointments for a specific patient.
@@ -46,6 +52,7 @@ Additional Methods for Comprehensive Management
 
     Get Appointments by Hospital ID:
     GET /hospitals/{hospital_id}/appointments - Retrieve all appointments within a specific hospital.
+
 
 Administrative Methods
 
